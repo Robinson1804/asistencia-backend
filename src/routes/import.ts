@@ -113,16 +113,20 @@ router.post('/import', async (req, res) => {
     }
     results.tiposContrato = c;
 
-    // 7. Coordinadores
+    // 7. Coordinadores — extraídos desde relacionesDivision (datos anidados)
     c = 0;
-    const coordSource = raw.coordinadoresDivision || raw.coordinadoresDivisiones || raw.coordinadores || {};
-    for (const [fbId, doc] of Object.entries(coordSource) as any) {
-      if (!doc.nombreCoordinador) continue;
+    const coordById: Record<string, string> = {};
+    for (const [, doc] of Object.entries(raw.relacionesDivision || {}) as any) {
+      const fbCoordId = doc.coordinadorId;
+      const nombre = doc.coordinador?.nombre ?? doc.nombreCoordinador;
+      if (!fbCoordId || !nombre || coordById[fbCoordId]) continue;
       const r = await client.query(
         `INSERT INTO coordinadores (nombre_coordinador, activo) VALUES ($1,$2) RETURNING id`,
-        [doc.nombreCoordinador, doc.activo ?? true]
+        [nombre, doc.activo ?? true]
       );
-      maps.coordinadores[fbId] = r.rows[0].id; c++;
+      maps.coordinadores[fbCoordId] = r.rows[0].id;
+      coordById[fbCoordId] = r.rows[0].id;
+      c++;
     }
     results.coordinadores = c;
 
