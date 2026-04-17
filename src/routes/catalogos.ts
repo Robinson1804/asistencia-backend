@@ -14,6 +14,14 @@ function crudRoutes(table: string, fields: string[]) {
     } catch (err: any) { res.status(500).json({ error: err.message }); }
   });
 
+  r.get('/:id', requireAuth, async (req, res) => {
+    try {
+      const { rows } = await pool.query(`SELECT * FROM ${table} WHERE id = $1`, [req.params.id]);
+      if (!rows[0]) return res.status(404).json({ error: 'No encontrado' });
+      res.json(rows[0]);
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
   r.post('/', requireAuth, async (req, res) => {
     const values = fields.map(f => req.body[f]);
     const cols = fields.join(', ');
