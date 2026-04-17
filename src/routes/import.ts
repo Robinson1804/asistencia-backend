@@ -6,15 +6,12 @@ import pool from '../db';
 
 const router = Router();
 
-// Endpoint de un solo uso para importar datos de Firestore
-// Protegido con una clave secreta de importación
 router.post('/import', async (req, res) => {
   const { secret } = req.body;
   if (secret !== process.env.IMPORT_SECRET) {
     return res.status(403).json({ error: 'Clave incorrecta' });
   }
 
-  // Buscar el archivo JSON
   const possiblePaths = [
     path.join(__dirname, '../../scripts/firestore-export.json'),
     path.join(__dirname, '../scripts/firestore-export.json'),
@@ -54,8 +51,8 @@ router.post('/import', async (req, res) => {
     let c = 0;
     for (const [fbId, doc] of Object.entries(raw.sedes || {}) as any) {
       const r = await client.query(
-        `INSERT INTO sedes (firebase_id, nombre_sede, direccion, activo) VALUES ($1,$2,$3,$4) RETURNING id`,
-        [fbId, doc.nombreSede ?? 'Sin nombre', doc.direccion ?? null, doc.activo ?? true]
+        `INSERT INTO sedes (nombre_sede, direccion, activo) VALUES ($1,$2,$3) RETURNING id`,
+        [doc.nombreSede ?? 'Sin nombre', doc.direccion ?? null, doc.activo ?? true]
       );
       maps.sedes[fbId] = r.rows[0].id; c++;
     }
@@ -65,8 +62,8 @@ router.post('/import', async (req, res) => {
     c = 0;
     for (const [fbId, doc] of Object.entries(raw.divisiones || {}) as any) {
       const r = await client.query(
-        `INSERT INTO divisiones (firebase_id, nombre_division, descripcion, activo) VALUES ($1,$2,$3,$4) RETURNING id`,
-        [fbId, doc.nombreDivision ?? 'Sin nombre', doc.descripcion ?? null, doc.activo ?? true]
+        `INSERT INTO divisiones (nombre_division, descripcion, activo) VALUES ($1,$2,$3) RETURNING id`,
+        [doc.nombreDivision ?? 'Sin nombre', doc.descripcion ?? null, doc.activo ?? true]
       );
       maps.divisiones[fbId] = r.rows[0].id; c++;
     }
@@ -76,8 +73,8 @@ router.post('/import', async (req, res) => {
     c = 0;
     for (const [fbId, doc] of Object.entries(raw.dtt || {}) as any) {
       const r = await client.query(
-        `INSERT INTO dtt (firebase_id, nombre_dtt, codigo_dtt, descripcion) VALUES ($1,$2,$3,$4) RETURNING id`,
-        [fbId, doc.nombreDTT ?? 'Sin nombre', doc.codigoDTT ?? null, doc.descripcion ?? null]
+        `INSERT INTO dtt (nombre_dtt, codigo_dtt, descripcion) VALUES ($1,$2,$3) RETURNING id`,
+        [doc.nombreDTT ?? 'Sin nombre', doc.codigoDTT ?? null, doc.descripcion ?? null]
       );
       maps.dtt[fbId] = r.rows[0].id; c++;
     }
@@ -87,8 +84,8 @@ router.post('/import', async (req, res) => {
     c = 0;
     for (const [fbId, doc] of Object.entries(raw.proyectos || {}) as any) {
       const r = await client.query(
-        `INSERT INTO proyectos (firebase_id, codigo_proyecto, nombre_proyecto, descripcion, activo) VALUES ($1,$2,$3,$4,$5) RETURNING id`,
-        [fbId, doc.codigoProyecto ?? null, doc.nombreProyecto ?? 'Sin nombre', doc.descripcion ?? null, doc.activo ?? true]
+        `INSERT INTO proyectos (codigo_proyecto, nombre_proyecto, descripcion, activo) VALUES ($1,$2,$3,$4) RETURNING id`,
+        [doc.codigoProyecto ?? null, doc.nombreProyecto ?? 'Sin nombre', doc.descripcion ?? null, doc.activo ?? true]
       );
       maps.proyectos[fbId] = r.rows[0].id; c++;
     }
@@ -98,8 +95,8 @@ router.post('/import', async (req, res) => {
     c = 0;
     for (const [fbId, doc] of Object.entries(raw.modalidades || {}) as any) {
       const r = await client.query(
-        `INSERT INTO modalidades (firebase_id, nombre_modalidad, descripcion) VALUES ($1,$2,$3) RETURNING id`,
-        [fbId, doc.nombreModalidad ?? 'Sin nombre', doc.descripcion ?? null]
+        `INSERT INTO modalidades (nombre_modalidad, descripcion) VALUES ($1,$2) RETURNING id`,
+        [doc.nombreModalidad ?? 'Sin nombre', doc.descripcion ?? null]
       );
       maps.modalidades[fbId] = r.rows[0].id; c++;
     }
@@ -109,8 +106,8 @@ router.post('/import', async (req, res) => {
     c = 0;
     for (const [fbId, doc] of Object.entries(raw.tiposContrato || {}) as any) {
       const r = await client.query(
-        `INSERT INTO tipos_contrato (firebase_id, tipo_contrato, descripcion) VALUES ($1,$2,$3) RETURNING id`,
-        [fbId, doc.tipoContrato ?? 'Sin nombre', doc.descripcion ?? null]
+        `INSERT INTO tipos_contrato (tipo_contrato, descripcion) VALUES ($1,$2) RETURNING id`,
+        [doc.tipoContrato ?? 'Sin nombre', doc.descripcion ?? null]
       );
       maps.tiposContrato[fbId] = r.rows[0].id; c++;
     }
@@ -122,8 +119,8 @@ router.post('/import', async (req, res) => {
     for (const [fbId, doc] of Object.entries(coordSource) as any) {
       if (!doc.nombreCoordinador) continue;
       const r = await client.query(
-        `INSERT INTO coordinadores (firebase_id, nombre_coordinador, activo) VALUES ($1,$2,$3) RETURNING id`,
-        [fbId, doc.nombreCoordinador, doc.activo ?? true]
+        `INSERT INTO coordinadores (nombre_coordinador, activo) VALUES ($1,$2) RETURNING id`,
+        [doc.nombreCoordinador, doc.activo ?? true]
       );
       maps.coordinadores[fbId] = r.rows[0].id; c++;
     }
@@ -133,8 +130,8 @@ router.post('/import', async (req, res) => {
     c = 0;
     for (const [fbId, doc] of Object.entries(raw.scrumMasters || {}) as any) {
       const r = await client.query(
-        `INSERT INTO scrum_masters (firebase_id, nombre_scrum_master, activo) VALUES ($1,$2,$3) RETURNING id`,
-        [fbId, doc.nombreScrumMaster ?? 'Sin nombre', doc.activo ?? true]
+        `INSERT INTO scrum_masters (nombre_scrum_master, activo) VALUES ($1,$2) RETURNING id`,
+        [doc.nombreScrumMaster ?? 'Sin nombre', doc.activo ?? true]
       );
       maps.scrumMasters[fbId] = r.rows[0].id; c++;
     }
@@ -144,8 +141,8 @@ router.post('/import', async (req, res) => {
     c = 0;
     for (const [fbId, doc] of Object.entries(raw.relacionesDivision || raw.relacionDivisiones || {}) as any) {
       const r = await client.query(
-        `INSERT INTO relaciones_division (firebase_id, coordinador_id, division_id, scrum_master_id) VALUES ($1,$2,$3,$4) RETURNING id`,
-        [fbId, maps.coordinadores[doc.coordinadorId] ?? null, maps.divisiones[doc.divisionId] ?? null, maps.scrumMasters[doc.scrumMasterId] ?? null]
+        `INSERT INTO relaciones_division (coordinador_id, division_id, scrum_master_id) VALUES ($1,$2,$3) RETURNING id`,
+        [maps.coordinadores[doc.coordinadorId] ?? null, maps.divisiones[doc.divisionId] ?? null, maps.scrumMasters[doc.scrumMasterId] ?? null]
       );
       maps.relacionesDivision[fbId] = r.rows[0].id; c++;
     }
@@ -158,13 +155,13 @@ router.post('/import', async (req, res) => {
       try {
         const r = await client.query(
           `INSERT INTO empleados (
-             firebase_id, dni, apellidos_nombres, orden, email, telefono,
+             dni, apellidos_nombres, orden, email, telefono,
              activo, avatar_url, edad, correo_personal, fecha_inicio, fecha_fin,
              sede_id, dtt_id, proyecto_id, modalidad_id, tipo_contrato_id, relacion_division_id
-           ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+           ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
            ON CONFLICT (dni) DO NOTHING RETURNING id`,
           [
-            fbId, doc.dni ?? doc.DNI,
+            doc.dni ?? doc.DNI,
             doc.apellidosNombres ?? 'Sin nombre', doc.orden ?? null,
             doc.email ?? null, doc.telefono ?? null, doc.activo ?? true,
             doc.avatarUrl ?? null, doc.edad ?? null, doc.correoPersonal ?? null,
@@ -181,16 +178,16 @@ router.post('/import', async (req, res) => {
 
     // 11. Asistencias
     c = 0;
-    for (const [fbId, doc] of Object.entries(raw.asistencias || {}) as any) {
+    for (const [, doc] of Object.entries(raw.asistencias || {}) as any) {
       const empId = maps.empleados[doc.employeeId];
       if (!empId) continue;
       const fecha = toDate(doc.date) ?? toDate(doc.timestamp) ?? toDate(doc.fecha);
       if (!fecha) continue;
       try {
         await client.query(
-          `INSERT INTO asistencias (firebase_id, employee_id, fecha, status, justification_type, justification_notes)
-           VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (employee_id, fecha) DO NOTHING`,
-          [fbId, empId, fecha, doc.status ?? 'No Registrado', doc.justificationType ?? null, doc.justificationNotes ?? null]
+          `INSERT INTO asistencias (employee_id, fecha, status, justification_type, justification_notes)
+           VALUES ($1,$2,$3,$4,$5) ON CONFLICT (employee_id, fecha) DO NOTHING`,
+          [empId, fecha, doc.status ?? 'No Registrado', doc.justificationType ?? null, doc.justificationNotes ?? null]
         );
         c++;
       } catch {}
@@ -199,15 +196,15 @@ router.post('/import', async (req, res) => {
 
     // 12. Justificaciones
     c = 0;
-    for (const [fbId, doc] of Object.entries(raw.justificaciones || {}) as any) {
+    for (const [, doc] of Object.entries(raw.justificaciones || {}) as any) {
       const empId = maps.empleados[doc.employeeId];
       if (!empId) continue;
       const fecha = toDate(doc.date) ?? toDate(doc.fecha);
       if (!fecha) continue;
       try {
         await client.query(
-          `INSERT INTO justificaciones (firebase_id, employee_id, fecha, tipo, notas) VALUES ($1,$2,$3,$4,$5)`,
-          [fbId, empId, fecha, doc.type ?? 'Sin tipo', doc.notes ?? null]
+          `INSERT INTO justificaciones (employee_id, fecha, tipo, notas) VALUES ($1,$2,$3,$4)`,
+          [empId, fecha, doc.type ?? 'Sin tipo', doc.notes ?? null]
         );
         c++;
       } catch {}
@@ -216,19 +213,19 @@ router.post('/import', async (req, res) => {
 
     // 13. Conocimientos
     c = 0;
-    for (const [fbId, doc] of Object.entries(raw.conocimientos || {}) as any) {
+    for (const [, doc] of Object.entries(raw.conocimientos || {}) as any) {
       const empId = maps.empleados[doc.employeeId];
       if (!empId) continue;
       try {
         await client.query(
           `INSERT INTO conocimientos_empleado (
-             firebase_id, employee_id, grado_instruccion, grado_instruccion_otro,
+             employee_id, grado_instruccion, grado_instruccion_otro,
              cargo, cargo_otro, anos_experiencia, frontend, backend, databases, devops,
              proyectos_otin, tecnologias_aprender, otras_tecnologias
-           ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+           ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
            ON CONFLICT (employee_id) DO NOTHING`,
           [
-            fbId, empId, doc.gradoInstruccion ?? null, doc.gradoInstruccionOtro ?? null,
+            empId, doc.gradoInstruccion ?? null, doc.gradoInstruccionOtro ?? null,
             doc.cargo ?? null, doc.cargoOtro ?? null, doc.añosExperiencia ?? null,
             JSON.stringify(doc.frontend ?? {}), JSON.stringify(doc.backend ?? {}),
             JSON.stringify(doc.databases ?? {}), JSON.stringify(doc.devops ?? {}),
@@ -242,11 +239,11 @@ router.post('/import', async (req, res) => {
 
     // 14. Users
     c = 0;
-    for (const [uid, doc] of Object.entries(raw.users || {}) as any) {
+    for (const [, doc] of Object.entries(raw.users || {}) as any) {
       const hash = await bcrypt.hash('Cambiar123!', 10);
       await client.query(
-        `INSERT INTO users (firebase_uid, email, password_hash, role) VALUES ($1,$2,$3,$4) ON CONFLICT (email) DO NOTHING`,
-        [uid, doc.email, hash, doc.role ?? 'registrador']
+        `INSERT INTO users (email, password_hash, role) VALUES ($1,$2,$3) ON CONFLICT (email) DO NOTHING`,
+        [doc.email, hash, doc.role ?? 'registrador']
       );
       c++;
     }
