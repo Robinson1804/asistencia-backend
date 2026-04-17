@@ -63,7 +63,13 @@ router.post('/', requireAuth, async (req, res) => {
       `INSERT INTO empleados (dni, apellidos_nombres, orden, email, telefono, activo,
          avatar_url, edad, correo_personal, fecha_inicio, fecha_fin,
          sede_id, dtt_id, proyecto_id, modalidad_id, tipo_contrato_id, relacion_division_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING *`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+       ON CONFLICT (dni) DO UPDATE SET
+         apellidos_nombres=$2, orden=$3, email=$4, telefono=$5, activo=$6,
+         avatar_url=$7, edad=$8, correo_personal=$9, fecha_inicio=$10, fecha_fin=$11,
+         sede_id=$12, dtt_id=$13, proyecto_id=$14, modalidad_id=$15,
+         tipo_contrato_id=$16, relacion_division_id=$17
+       RETURNING *`,
       [dni, apellidos_nombres, orden, email, telefono, activo ?? true, avatar_url, edad,
        correo_personal, fecha_inicio, fecha_fin, sede_id, dtt_id, proyecto_id,
        modalidad_id, tipo_contrato_id, relacion_division_id]
