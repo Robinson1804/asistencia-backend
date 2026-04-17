@@ -115,7 +115,7 @@ router.post('/import', async (req, res) => {
 
     // 7. Coordinadores
     c = 0;
-    const coordSource = raw.coordinadoresDivisiones || raw.coordinadores || {};
+    const coordSource = raw.coordinadoresDivision || raw.coordinadoresDivisiones || raw.coordinadores || {};
     for (const [fbId, doc] of Object.entries(coordSource) as any) {
       if (!doc.nombreCoordinador) continue;
       const r = await client.query(
