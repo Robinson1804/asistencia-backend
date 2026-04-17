@@ -7,7 +7,7 @@ const router = Router();
 // GET /api/asistencias?fecha=2024-01-15
 router.get('/', requireAuth, async (req, res) => {
   try {
-    const { fecha } = req.query;
+    const { fecha, from, to } = req.query;
     let query = `
       SELECT a.*, e.apellidos_nombres, e.dni, e.orden,
         s.nombre_sede
@@ -19,6 +19,9 @@ router.get('/', requireAuth, async (req, res) => {
     if (fecha) {
       params.push(fecha);
       query += ` WHERE a.fecha = $1`;
+    } else if (from && to) {
+      params.push(from, to);
+      query += ` WHERE a.fecha >= $1 AND a.fecha <= $2`;
     }
     query += ' ORDER BY e.orden NULLS LAST, e.apellidos_nombres';
     const { rows } = await pool.query(query, params);
