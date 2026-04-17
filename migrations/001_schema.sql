@@ -4,7 +4,6 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- Usuarios (reemplaza Firebase Auth)
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  firebase_uid VARCHAR(255),
   email VARCHAR(255) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   role VARCHAR(50) NOT NULL DEFAULT 'registrador',
@@ -14,7 +13,6 @@ CREATE TABLE IF NOT EXISTS users (
 -- Sedes
 CREATE TABLE IF NOT EXISTS sedes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  firebase_id VARCHAR(255),
   nombre_sede VARCHAR(255) NOT NULL,
   direccion TEXT,
   activo BOOLEAN DEFAULT TRUE,
@@ -24,7 +22,6 @@ CREATE TABLE IF NOT EXISTS sedes (
 -- Divisiones
 CREATE TABLE IF NOT EXISTS divisiones (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  firebase_id VARCHAR(255),
   nombre_division VARCHAR(255) NOT NULL,
   descripcion TEXT,
   activo BOOLEAN DEFAULT TRUE
@@ -33,7 +30,6 @@ CREATE TABLE IF NOT EXISTS divisiones (
 -- DTT
 CREATE TABLE IF NOT EXISTS dtt (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  firebase_id VARCHAR(255),
   nombre_dtt VARCHAR(255) NOT NULL,
   codigo_dtt VARCHAR(100),
   descripcion TEXT
@@ -42,7 +38,6 @@ CREATE TABLE IF NOT EXISTS dtt (
 -- Proyectos
 CREATE TABLE IF NOT EXISTS proyectos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  firebase_id VARCHAR(255),
   codigo_proyecto VARCHAR(100),
   nombre_proyecto VARCHAR(255) NOT NULL,
   descripcion TEXT,
@@ -52,7 +47,6 @@ CREATE TABLE IF NOT EXISTS proyectos (
 -- Modalidades
 CREATE TABLE IF NOT EXISTS modalidades (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  firebase_id VARCHAR(255),
   nombre_modalidad VARCHAR(255) NOT NULL,
   descripcion TEXT
 );
@@ -60,7 +54,6 @@ CREATE TABLE IF NOT EXISTS modalidades (
 -- Tipos de Contrato
 CREATE TABLE IF NOT EXISTS tipos_contrato (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  firebase_id VARCHAR(255),
   tipo_contrato VARCHAR(255) NOT NULL,
   descripcion TEXT
 );
@@ -68,7 +61,6 @@ CREATE TABLE IF NOT EXISTS tipos_contrato (
 -- Coordinadores
 CREATE TABLE IF NOT EXISTS coordinadores (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  firebase_id VARCHAR(255),
   nombre_coordinador VARCHAR(255) NOT NULL,
   activo BOOLEAN DEFAULT TRUE
 );
@@ -76,7 +68,6 @@ CREATE TABLE IF NOT EXISTS coordinadores (
 -- Scrum Masters
 CREATE TABLE IF NOT EXISTS scrum_masters (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  firebase_id VARCHAR(255),
   nombre_scrum_master VARCHAR(255) NOT NULL,
   activo BOOLEAN DEFAULT TRUE
 );
@@ -84,7 +75,6 @@ CREATE TABLE IF NOT EXISTS scrum_masters (
 -- Relaciones División
 CREATE TABLE IF NOT EXISTS relaciones_division (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  firebase_id VARCHAR(255),
   coordinador_id UUID REFERENCES coordinadores(id),
   division_id UUID REFERENCES divisiones(id),
   scrum_master_id UUID REFERENCES scrum_masters(id)
@@ -93,7 +83,6 @@ CREATE TABLE IF NOT EXISTS relaciones_division (
 -- Empleados
 CREATE TABLE IF NOT EXISTS empleados (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  firebase_id VARCHAR(255),
   dni VARCHAR(20) UNIQUE NOT NULL,
   apellidos_nombres VARCHAR(255) NOT NULL,
   orden VARCHAR(50),
@@ -117,7 +106,6 @@ CREATE TABLE IF NOT EXISTS empleados (
 -- Asistencias
 CREATE TABLE IF NOT EXISTS asistencias (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  firebase_id VARCHAR(255),
   employee_id UUID REFERENCES empleados(id) ON DELETE CASCADE,
   fecha DATE NOT NULL,
   status VARCHAR(50) NOT NULL,
@@ -130,7 +118,6 @@ CREATE TABLE IF NOT EXISTS asistencias (
 -- Justificaciones
 CREATE TABLE IF NOT EXISTS justificaciones (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  firebase_id VARCHAR(255),
   employee_id UUID REFERENCES empleados(id),
   fecha DATE NOT NULL,
   tipo VARCHAR(100) NOT NULL,
@@ -141,7 +128,6 @@ CREATE TABLE IF NOT EXISTS justificaciones (
 -- Conocimientos del empleado
 CREATE TABLE IF NOT EXISTS conocimientos_empleado (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  firebase_id VARCHAR(255),
   employee_id UUID REFERENCES empleados(id) UNIQUE,
   grado_instruccion VARCHAR(100),
   grado_instruccion_otro VARCHAR(100),
