@@ -58,6 +58,56 @@ export const tiposContratoRouter = crudRoutes('tipos_contrato', ['tipo_contrato'
 export const coordinadoresRouter = crudRoutes('coordinadores', ['nombre_coordinador', 'activo']);
 export const scrumMastersRouter = crudRoutes('scrum_masters', ['nombre_scrum_master', 'activo']);
 
+export const conocimientosRouter = (() => {
+  const r = Router();
+  r.get('/:employeeId', requireAuth, async (req, res) => {
+    try {
+      const { rows } = await pool.query('SELECT * FROM conocimientos_empleado WHERE employee_id = $1', [req.params.employeeId]);
+      res.json(rows[0] || null);
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+  r.post('/', requireAuth, async (req, res) => {
+    const { employee_id, grado_instruccion, grado_instruccion_otro, cargo, cargo_otro, anos_experiencia,
+      frontend, backend, databases, devops, proyectos_otin, tecnologias_aprender, otras_tecnologias } = req.body;
+    try {
+      const { rows } = await pool.query(`
+        INSERT INTO conocimientos_empleado
+          (employee_id, grado_instruccion, grado_instruccion_otro, cargo, cargo_otro, anos_experiencia,
+           frontend, backend, databases, devops, proyectos_otin, tecnologias_aprender, otras_tecnologias)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+        ON CONFLICT (employee_id) DO UPDATE SET
+          grado_instruccion=$2, grado_instruccion_otro=$3, cargo=$4, cargo_otro=$5, anos_experiencia=$6,
+          frontend=$7, backend=$8, databases=$9, devops=$10, proyectos_otin=$11,
+          tecnologias_aprender=$12, otras_tecnologias=$13, updated_at=NOW()
+        RETURNING *`,
+        [employee_id, grado_instruccion, grado_instruccion_otro, cargo, cargo_otro, anos_experiencia,
+         JSON.stringify(frontend), JSON.stringify(backend), JSON.stringify(databases), JSON.stringify(devops),
+         proyectos_otin, tecnologias_aprender, otras_tecnologias]
+      );
+      res.status(201).json(rows[0]);
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+  return r;
+})();
+
+export const relacionesDivisionRouter = (() => {
+  const r = Router();
+  r.get('/', requireAuth, async (_req, res) => {
+    try {
+      const { rows } = await pool.query(`
+        SELECT rd.*, sm.nombre_scrum_master, c.nombre_coordinador, d.nombre_division
+        FROM relaciones_division rd
+        LEFT JOIN scrum_masters sm ON rd.scrum_master_id = sm.id
+        LEFT JOIN coordinadores c ON rd.coordinador_id = c.id
+        LEFT JOIN divisiones d ON rd.division_id = d.id
+        ORDER BY sm.nombre_scrum_master
+      `);
+      res.json(rows);
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+  return r;
+})();
+
 export const justificacionesRouter = (() => {
   const r = Router();
   r.get('/', requireAuth, async (req, res) => {

@@ -13,9 +13,9 @@ router.get('/', requireAuth, async (_req, res) => {
         p.nombre_proyecto, p.codigo_proyecto,
         m.nombre_modalidad,
         tc.tipo_contrato,
-        div.nombre_division,
-        c.nombre_coordinador,
-        sm.nombre_scrum_master
+        div.id as division_id, div.nombre_division,
+        c.id as coordinador_id, c.nombre_coordinador,
+        sm.id as scrum_master_id, sm.nombre_scrum_master
       FROM empleados e
       LEFT JOIN sedes s ON e.sede_id = s.id
       LEFT JOIN dtt d ON e.dtt_id = d.id
@@ -29,6 +29,16 @@ router.get('/', requireAuth, async (_req, res) => {
       ORDER BY e.orden NULLS LAST, e.apellidos_nombres
     `);
     res.json(rows);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/by-dni/:dni', requireAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM empleados WHERE dni = $1', [req.params.dni]);
+    if (!rows[0]) return res.status(404).json({ error: 'Empleado no encontrado' });
+    res.json(rows[0]);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
