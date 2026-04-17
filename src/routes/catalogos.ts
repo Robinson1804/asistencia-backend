@@ -100,6 +100,7 @@ export const conocimientosRouter = (() => {
 
 export const relacionesDivisionRouter = (() => {
   const r = Router();
+
   r.get('/', requireAuth, async (_req, res) => {
     try {
       const { rows } = await pool.query(`
@@ -113,6 +114,36 @@ export const relacionesDivisionRouter = (() => {
       res.json(rows);
     } catch (err: any) { res.status(500).json({ error: err.message }); }
   });
+
+  r.post('/', requireAuth, async (req, res) => {
+    const { scrum_master_id, coordinador_id, division_id } = req.body;
+    try {
+      const { rows } = await pool.query(
+        `INSERT INTO relaciones_division (scrum_master_id, coordinador_id, division_id) VALUES ($1,$2,$3) RETURNING *`,
+        [scrum_master_id, coordinador_id, division_id]
+      );
+      res.status(201).json(rows[0]);
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  r.put('/:id', requireAuth, async (req, res) => {
+    const { scrum_master_id, coordinador_id, division_id } = req.body;
+    try {
+      const { rows } = await pool.query(
+        `UPDATE relaciones_division SET scrum_master_id=$1, coordinador_id=$2, division_id=$3 WHERE id=$4 RETURNING *`,
+        [scrum_master_id, coordinador_id, division_id, req.params.id]
+      );
+      res.json(rows[0]);
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  r.delete('/:id', requireAuth, async (req, res) => {
+    try {
+      await pool.query(`DELETE FROM relaciones_division WHERE id=$1`, [req.params.id]);
+      res.json({ success: true });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
   return r;
 })();
 
