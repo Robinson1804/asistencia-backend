@@ -154,10 +154,10 @@ export const justificacionesRouter = (() => {
   r.get('/', requireAuth, async (req, res) => {
     try {
       const { employee_id, fecha } = req.query;
-      let q = 'SELECT * FROM justificaciones WHERE 1=1';
+      let q = `SELECT j.*, e.dni FROM justificaciones j JOIN empleados e ON j.employee_id = e.id WHERE 1=1`;
       const params: any[] = [];
-      if (employee_id) { params.push(employee_id); q += ` AND employee_id = $${params.length}`; }
-      if (fecha) { params.push(fecha); q += ` AND fecha = $${params.length}`; }
+      if (employee_id) { params.push(employee_id); q += ` AND j.employee_id = $${params.length}`; }
+      if (fecha) { params.push(fecha); q += ` AND j.fecha = $${params.length}`; }
       const { rows } = await pool.query(q, params);
       res.json(rows);
     } catch (err: any) { res.status(500).json({ error: err.message }); }
