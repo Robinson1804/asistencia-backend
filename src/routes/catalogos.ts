@@ -7,9 +7,11 @@ const router = Router();
 function crudRoutes(table: string, fields: string[]) {
   const r = Router();
 
-  r.get('/', requireAuth, async (_req, res) => {
+  r.get('/', requireAuth, async (req, res) => {
     try {
-      const { rows } = await pool.query(`SELECT * FROM ${table} ORDER BY id`);
+      const { activo } = req.query;
+      const where = activo === 'true' ? `WHERE activo = true` : activo === 'false' ? `WHERE activo = false` : '';
+      const { rows } = await pool.query(`SELECT * FROM ${table} ${where} ORDER BY id`);
       res.json(rows);
     } catch (err: any) { res.status(500).json({ error: err.message }); }
   });
@@ -162,13 +164,29 @@ export const justificacionesRouter = (() => {
   });
   r.post('/', requireAuth, async (req, res) => {
     const { employee_id, fecha, tipo, notas } = req.body;
+    const client = await pool.connect();
     try {
-      const { rows } = await pool.query(
-        `INSERT INTO justificaciones (employee_id, fecha, tipo, notas) VALUES ($1,$2,$3,$4) RETURNING *`,
+      await client.query('BEGIN');
+      const { rows } = await client.query(
+        `INSERT INTO justificaciones (employee_id, fecha, tipo, notas)
+         VALUES ($1,$2,$3,$4)
+         ON CONFLICT (employee_id, fecha) DO UPDATE SET tipo=EXCLUDED.tipo, notas=EXCLUDED.notas
+         RETURNING *`,
         [employee_id, fecha, tipo, notas]
       );
+      await client.query(
+        `UPDATE asistencias SET status = 'Falta Justificada'
+         WHERE employee_id = $1 AND fecha = $2`,
+        [employee_id, fecha]
+      );
+      await client.query('COMMIT');
       res.status(201).json(rows[0]);
-    } catch (err: any) { res.status(500).json({ error: err.message }); }
+    } catch (err: any) {
+      await client.query('ROLLBACK');
+      res.status(500).json({ error: err.message });
+    } finally {
+      client.release();
+    }
   });
   return r;
 })();
