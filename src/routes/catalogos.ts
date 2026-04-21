@@ -167,13 +167,22 @@ export const justificacionesRouter = (() => {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const { rows } = await client.query(
-        `INSERT INTO justificaciones (employee_id, fecha, tipo, notas)
-         VALUES ($1,$2,$3,$4)
-         ON CONFLICT (employee_id, fecha) DO UPDATE SET tipo=EXCLUDED.tipo, notas=EXCLUDED.notas
-         RETURNING *`,
-        [employee_id, fecha, tipo, notas]
+      const existing = await client.query(
+        `SELECT id FROM justificaciones WHERE employee_id=$1 AND fecha=$2`,
+        [employee_id, fecha]
       );
+      let rows;
+      if (existing.rows[0]) {
+        ({ rows } = await client.query(
+          `UPDATE justificaciones SET tipo=$3, notas=$4 WHERE employee_id=$1 AND fecha=$2 RETURNING *`,
+          [employee_id, fecha, tipo, notas]
+        ));
+      } else {
+        ({ rows } = await client.query(
+          `INSERT INTO justificaciones (employee_id, fecha, tipo, notas) VALUES ($1,$2,$3,$4) RETURNING *`,
+          [employee_id, fecha, tipo, notas]
+        ));
+      }
       await client.query(
         `UPDATE asistencias SET status = 'Falta Justificada'
          WHERE employee_id = $1 AND fecha = $2`,
