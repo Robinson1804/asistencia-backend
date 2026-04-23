@@ -184,7 +184,10 @@ export const justificacionesRouter = (() => {
         ));
       }
       await client.query(
-        `UPDATE asistencias SET status = 'Falta Justificada'
+        `UPDATE asistencias SET status = CASE
+           WHEN status = 'Tardanza' THEN 'Tardanza Justificada'
+           ELSE 'Falta Justificada'
+         END
          WHERE employee_id = $1 AND fecha = $2`,
         [employee_id, fecha]
       );
