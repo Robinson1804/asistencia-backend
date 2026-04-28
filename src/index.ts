@@ -11,6 +11,7 @@ import {
   scrumMastersRouter, justificacionesRouter, relacionesDivisionRouter, conocimientosRouter
 } from './routes/catalogos';
 import reportesRouter from './routes/reportes';
+import asistenciasTurnoRouter from './routes/asistencias-turno';
 
 dotenv.config();
 
@@ -36,6 +37,7 @@ app.use('/api/justificaciones', justificacionesRouter);
 app.use('/api/relaciones-division', relacionesDivisionRouter);
 app.use('/api/conocimientos', conocimientosRouter);
 app.use('/api/reportes', reportesRouter);
+app.use('/api/asistencias-turno', asistenciasTurnoRouter);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`Backend corriendo en puerto ${PORT}`));

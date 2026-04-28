@@ -4,8 +4,15 @@ import { requireAuth } from '../middleware/auth';
 
 const router = Router();
 
-router.get('/', requireAuth, async (_req, res) => {
+router.get('/', requireAuth, async (req, res) => {
   try {
+    const { scrum_master_id } = req.query;
+    const params: any[] = [];
+    let where = '';
+    if (scrum_master_id) {
+      params.push(scrum_master_id);
+      where = `WHERE rd.scrum_master_id = $1`;
+    }
     const { rows } = await pool.query(`
       SELECT e.*,
         s.nombre_sede, s.direccion as sede_direccion,
@@ -26,8 +33,9 @@ router.get('/', requireAuth, async (_req, res) => {
       LEFT JOIN divisiones div ON rd.division_id = div.id
       LEFT JOIN coordinadores c ON rd.coordinador_id = c.id
       LEFT JOIN scrum_masters sm ON rd.scrum_master_id = sm.id
+      ${where}
       ORDER BY e.orden NULLS LAST, e.apellidos_nombres
-    `);
+    `, params);
     res.json(rows);
   } catch (err: any) {
     res.status(500).json({ error: err.message });

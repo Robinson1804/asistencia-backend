@@ -163,26 +163,30 @@ export const justificacionesRouter = (() => {
     } catch (err: any) { res.status(500).json({ error: err.message }); }
   });
   r.post('/', requireAuth, async (req, res) => {
-    const { employee_id, fecha, tipo, notas } = req.body;
+    const { employee_id, fecha, tipo, notas, turno } = req.body;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
+      // Upsert scoped by turno (null turno = legacy daily)
       const existing = await client.query(
-        `SELECT id FROM justificaciones WHERE employee_id=$1 AND fecha=$2`,
-        [employee_id, fecha]
+        turno != null
+          ? `SELECT id FROM justificaciones WHERE employee_id=$1 AND fecha=$2 AND turno=$3`
+          : `SELECT id FROM justificaciones WHERE employee_id=$1 AND fecha=$2 AND turno IS NULL`,
+        turno != null ? [employee_id, fecha, turno] : [employee_id, fecha]
       );
       let rows;
       if (existing.rows[0]) {
         ({ rows } = await client.query(
-          `UPDATE justificaciones SET tipo=$3, notas=$4 WHERE employee_id=$1 AND fecha=$2 RETURNING *`,
-          [employee_id, fecha, tipo, notas]
+          `UPDATE justificaciones SET tipo=$3, notas=$4 WHERE id=$5 RETURNING *`,
+          [employee_id, fecha, tipo, notas, existing.rows[0].id]
         ));
       } else {
         ({ rows } = await client.query(
-          `INSERT INTO justificaciones (employee_id, fecha, tipo, notas) VALUES ($1,$2,$3,$4) RETURNING *`,
-          [employee_id, fecha, tipo, notas]
+          `INSERT INTO justificaciones (employee_id, fecha, tipo, notas, turno) VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+          [employee_id, fecha, tipo, notas, turno ?? null]
         ));
       }
+      // Update daily status in asistencias
       await client.query(
         `UPDATE asistencias SET status = CASE
            WHEN status = 'Tardanza' THEN 'Tardanza Justificada'
