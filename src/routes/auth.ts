@@ -44,8 +44,9 @@ router.post('/seed-scrum-users', async (req, res) => {
     return `${normalize(parts[0])}.${normalize(parts[1])}@inei.gob.pe`;
   }
 
-  const client = await pool.connect();
+  let client: any;
   try {
+    client = await pool.connect();
     const { rows: masters } = await client.query(
       `SELECT id, nombre_scrum_master FROM scrum_masters WHERE activo = true ORDER BY nombre_scrum_master`
     );
@@ -70,8 +71,10 @@ router.post('/seed-scrum-users', async (req, res) => {
     }
 
     res.json({ password_default: DEFAULT_PASSWORD, usuarios: results });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   } finally {
-    client.release();
+    if (client) client.release();
   }
 });
 
