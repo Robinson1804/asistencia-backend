@@ -12,18 +12,28 @@ function computeDailyStatus(statuses: string[]): string {
 }
 
 router.get('/', requireAuth, async (req, res) => {
-  const { fecha } = req.query;
-  if (!fecha) return res.status(400).json({ error: 'fecha requerida' });
+  const { fecha, from, to } = req.query;
   try {
-    const { rows } = await pool.query(
-      `SELECT at.employee_id, at.turno, at.status,
-              TO_CHAR(at.fecha, 'YYYY-MM-DD') AS fecha,
-              e.dni
-       FROM asistencias_turno at
-       JOIN empleados e ON at.employee_id = e.id::text
-       WHERE TO_CHAR(at.fecha, 'YYYY-MM-DD') = $1`,
-      [fecha]
-    );
+    let q: string;
+    let params: any[];
+    if (fecha) {
+      q = `SELECT at.employee_id, at.turno, at.status,
+                  TO_CHAR(at.fecha, 'YYYY-MM-DD') AS fecha, e.dni
+           FROM asistencias_turno at
+           JOIN empleados e ON at.employee_id = e.id::text
+           WHERE TO_CHAR(at.fecha, 'YYYY-MM-DD') = $1`;
+      params = [fecha];
+    } else if (from && to) {
+      q = `SELECT at.employee_id, at.turno, at.status,
+                  TO_CHAR(at.fecha, 'YYYY-MM-DD') AS fecha, e.dni
+           FROM asistencias_turno at
+           JOIN empleados e ON at.employee_id = e.id::text
+           WHERE at.fecha BETWEEN $1::date AND $2::date`;
+      params = [from, to];
+    } else {
+      return res.status(400).json({ error: 'fecha o from/to requeridos' });
+    }
+    const { rows } = await pool.query(q, params);
     res.json(rows);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
