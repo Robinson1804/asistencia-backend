@@ -20,7 +20,7 @@ router.get('/', requireAuth, async (req, res) => {
               TO_CHAR(at.fecha, 'YYYY-MM-DD') AS fecha,
               e.dni
        FROM asistencias_turno at
-       JOIN empleados e ON at.employee_id = e.id
+       JOIN empleados e ON at.employee_id = e.id::text
        WHERE TO_CHAR(at.fecha, 'YYYY-MM-DD') = $1`,
       [fecha]
     );
