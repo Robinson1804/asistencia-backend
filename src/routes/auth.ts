@@ -26,7 +26,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.get('/version', (_req, res) => res.json({ version: '2026-04-28-v3' }));
+router.get('/version', (_req, res) => res.json({ version: '2026-04-28-v4' }));
 
 router.post('/seed-scrum-users', async (req, res) => {
   if (req.headers['x-import-secret'] !== process.env.IMPORT_SECRET)
@@ -50,9 +50,7 @@ router.post('/seed-scrum-users', async (req, res) => {
   try {
     client = await pool.connect();
     // Asegurar que la columna scrum_master_id exista
-    await client.query(`
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS scrum_master_id INTEGER REFERENCES scrum_masters(id)
-    `);
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS scrum_master_id TEXT`);
     const { rows: masters } = await client.query(
       `SELECT id, nombre_scrum_master FROM scrum_masters WHERE activo = true ORDER BY nombre_scrum_master`
     );
