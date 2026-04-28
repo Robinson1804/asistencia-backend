@@ -9,7 +9,9 @@ router.get('/', requireAuth, async (req, res) => {
   try {
     const { fecha, from, to } = req.query;
     let query = `
-      SELECT a.*, e.apellidos_nombres, e.dni, e.orden,
+      SELECT a.employee_id, a.status,
+        TO_CHAR(a.fecha, 'YYYY-MM-DD') AS fecha,
+        e.apellidos_nombres, e.dni, e.orden,
         s.nombre_sede
       FROM asistencias a
       JOIN empleados e ON a.employee_id = e.id

@@ -30,7 +30,7 @@ router.get('/asistencias', requireAuth, async (req, res) => {
   try {
     const { rows } = await pool.query(`
       SELECT
-        a.fecha,
+        TO_CHAR(a.fecha, 'YYYY-MM-DD') AS fecha,
         a.status,
         e.apellidos_nombres,
         e.dni,
