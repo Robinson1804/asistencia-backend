@@ -26,7 +26,30 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.get('/version', (_req, res) => res.json({ version: '2026-04-28-v4' }));
+router.get('/version', (_req, res) => res.json({ version: '2026-04-28-v5' }));
+
+router.post('/migrate', async (req, res) => {
+  if (req.headers['x-import-secret'] !== process.env.IMPORT_SECRET)
+    return res.status(403).json({ error: 'Forbidden' });
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS asistencias_turno (
+        id SERIAL PRIMARY KEY,
+        employee_id INTEGER NOT NULL REFERENCES empleados(id),
+        fecha DATE NOT NULL,
+        turno SMALLINT NOT NULL CHECK (turno IN (1,2,3)),
+        status VARCHAR(20) NOT NULL CHECK (status IN ('Presente','Falta')),
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(employee_id, fecha, turno)
+      );
+      ALTER TABLE justificaciones ADD COLUMN IF NOT EXISTS turno SMALLINT;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS scrum_master_id TEXT;
+    `);
+    res.json({ success: true, message: 'Migraciones aplicadas' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 router.post('/seed-scrum-users', async (req, res) => {
   if (req.headers['x-import-secret'] !== process.env.IMPORT_SECRET)
