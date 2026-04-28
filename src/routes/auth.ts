@@ -26,7 +26,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.get('/version', (_req, res) => res.json({ version: '2026-04-28-v5' }));
+router.get('/version', (_req, res) => res.json({ version: '2026-04-28-v6' }));
 
 router.post('/migrate', async (req, res) => {
   if (req.headers['x-import-secret'] !== process.env.IMPORT_SECRET)
@@ -35,7 +35,7 @@ router.post('/migrate', async (req, res) => {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS asistencias_turno (
         id SERIAL PRIMARY KEY,
-        employee_id INTEGER NOT NULL REFERENCES empleados(id),
+        employee_id TEXT NOT NULL,
         fecha DATE NOT NULL,
         turno SMALLINT NOT NULL CHECK (turno IN (1,2,3)),
         status VARCHAR(20) NOT NULL CHECK (status IN ('Presente','Falta')),
