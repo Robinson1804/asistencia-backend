@@ -49,6 +49,10 @@ router.post('/seed-scrum-users', async (req, res) => {
   let client: any;
   try {
     client = await pool.connect();
+    // Asegurar que la columna scrum_master_id exista
+    await client.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS scrum_master_id INTEGER REFERENCES scrum_masters(id)
+    `);
     const { rows: masters } = await client.query(
       `SELECT id, nombre_scrum_master FROM scrum_masters WHERE activo = true ORDER BY nombre_scrum_master`
     );
