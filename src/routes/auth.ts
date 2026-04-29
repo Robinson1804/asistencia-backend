@@ -15,18 +15,21 @@ router.post('/login', async (req, res) => {
     if (!rows[0] || !(await bcrypt.compare(password, rows[0].password_hash)))
       return res.status(401).json({ error: 'Credenciales inválidas' });
 
-    const token = jwt.sign(
-      { id: rows[0].id, email: rows[0].email, role: rows[0].role, scrumMasterId: rows[0].scrum_master_id ?? null },
-      process.env.JWT_SECRET!,
-      { expiresIn: '8h' }
-    );
-    res.json({ token, user: { id: rows[0].id, email: rows[0].email, role: rows[0].role, scrumMasterId: rows[0].scrum_master_id ?? null } });
+    const payload = {
+      id: rows[0].id,
+      email: rows[0].email,
+      role: rows[0].role,
+      scrumMasterId: rows[0].scrum_master_id ?? null,
+      sedeFiltro: rows[0].sede_filtro ?? null,
+    };
+    const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '8h' });
+    res.json({ token, user: payload });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
 
-router.get('/version', (_req, res) => res.json({ version: '2026-04-28-v6' }));
+router.get('/version', (_req, res) => res.json({ version: '2026-04-29-v1' }));
 
 router.post('/migrate', async (req, res) => {
   if (req.headers['x-import-secret'] !== process.env.IMPORT_SECRET)
@@ -44,6 +47,7 @@ router.post('/migrate', async (req, res) => {
       );
       ALTER TABLE justificaciones ADD COLUMN IF NOT EXISTS turno SMALLINT;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS scrum_master_id TEXT;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS sede_filtro TEXT;
     `);
     res.json({ success: true, message: 'Migraciones aplicadas' });
   } catch (err: any) {
@@ -72,7 +76,6 @@ router.post('/seed-scrum-users', async (req, res) => {
   let client: any;
   try {
     client = await pool.connect();
-    // Asegurar que la columna scrum_master_id exista
     await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS scrum_master_id TEXT`);
     const { rows: masters } = await client.query(
       `SELECT id, nombre_scrum_master FROM scrum_masters WHERE activo = true ORDER BY nombre_scrum_master`
@@ -102,6 +105,31 @@ router.post('/seed-scrum-users', async (req, res) => {
     res.status(500).json({ error: err.message });
   } finally {
     if (client) client.release();
+  }
+});
+
+router.post('/create-sede-user', async (req, res) => {
+  if (req.headers['x-import-secret'] !== process.env.IMPORT_SECRET)
+    return res.status(403).json({ error: 'Forbidden' });
+
+  const { email, password, sede_filtro } = req.body;
+  if (!email || !password || !sede_filtro)
+    return res.status(400).json({ error: 'email, password y sede_filtro requeridos' });
+
+  try {
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS sede_filtro TEXT`);
+    const { rows: existing } = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (existing.length > 0)
+      return res.json({ estado: 'ya_existe', email });
+
+    const hash = await bcrypt.hash(password, 10);
+    await pool.query(
+      `INSERT INTO users (email, password_hash, role, sede_filtro) VALUES ($1, $2, 'registrador', $3)`,
+      [email, hash, sede_filtro]
+    );
+    res.json({ estado: 'creado', email, sede_filtro });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 });
 
