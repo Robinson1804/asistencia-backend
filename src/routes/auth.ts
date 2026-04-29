@@ -30,7 +30,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.get('/version', (_req, res) => res.json({ version: '2026-04-29-v2' }));
+router.get('/version', (_req, res) => res.json({ version: '2026-04-29-v3' }));
 
 router.post('/migrate', async (req, res) => {
   if (req.headers['x-import-secret'] !== process.env.IMPORT_SECRET)
