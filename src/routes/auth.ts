@@ -21,6 +21,7 @@ router.post('/login', async (req, res) => {
       role: rows[0].role,
       scrumMasterId: rows[0].scrum_master_id ?? null,
       sedeFiltro: rows[0].sede_filtro ?? null,
+      sedeExcluida: rows[0].sede_excluida ?? null,
     };
     const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '8h' });
     res.json({ token, user: payload });
@@ -29,7 +30,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.get('/version', (_req, res) => res.json({ version: '2026-04-29-v1' }));
+router.get('/version', (_req, res) => res.json({ version: '2026-04-29-v2' }));
 
 router.post('/migrate', async (req, res) => {
   if (req.headers['x-import-secret'] !== process.env.IMPORT_SECRET)
@@ -48,6 +49,7 @@ router.post('/migrate', async (req, res) => {
       ALTER TABLE justificaciones ADD COLUMN IF NOT EXISTS turno SMALLINT;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS scrum_master_id TEXT;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS sede_filtro TEXT;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS sede_excluida TEXT;
     `);
     res.json({ success: true, message: 'Migraciones aplicadas' });
   } catch (err: any) {
@@ -105,6 +107,24 @@ router.post('/seed-scrum-users', async (req, res) => {
     res.status(500).json({ error: err.message });
   } finally {
     if (client) client.release();
+  }
+});
+
+router.post('/update-user-sede', async (req, res) => {
+  if (req.headers['x-import-secret'] !== process.env.IMPORT_SECRET)
+    return res.status(403).json({ error: 'Forbidden' });
+  const { email, sede_filtro, sede_excluida } = req.body;
+  if (!email) return res.status(400).json({ error: 'email requerido' });
+  try {
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS sede_filtro TEXT`);
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS sede_excluida TEXT`);
+    await pool.query(
+      `UPDATE users SET sede_filtro = $2, sede_excluida = $3 WHERE email = $1`,
+      [email, sede_filtro ?? null, sede_excluida ?? null]
+    );
+    res.json({ success: true, email, sede_filtro, sede_excluida });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 });
 
