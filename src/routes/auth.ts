@@ -30,7 +30,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.get('/version', (_req, res) => res.json({ version: '2026-04-29-v3' }));
 
 router.post('/migrate', async (req, res) => {
   if (req.headers['x-import-secret'] !== process.env.IMPORT_SECRET)
@@ -152,5 +151,19 @@ router.post('/create-sede-user', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+router.get('/debug-sedes', async (req, res) => {
+  if (req.headers['x-import-secret'] !== process.env.IMPORT_SECRET)
+    return res.status(403).json({ error: 'Forbidden' });
+  try {
+    const { rows: sedes } = await pool.query(`SELECT id, nombre_sede FROM sedes ORDER BY nombre_sede`);
+    const { rows: users } = await pool.query(`SELECT email, sede_filtro, sede_excluida FROM users WHERE email IN ('registro@inei.gob.pe','registro.ribeyro@inei.gob.pe','registro.soporte@inei.gob.pe')`);
+    res.json({ sedes, users });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/version', (_req, res) => res.json({ version: '2026-04-29-v4' }));
 
 export default router;
